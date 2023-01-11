@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  web:
+    build:
+      #context: ../
+      dockerfile: Dockerfile.prod
+    command: gunicorn aso_site.wsgi:application --bind 0.0.0.0:8000
+    volumes:
+      - static_volume:/home/app/web/staticfiles
+    expose:
+      - 8000
+    env_file:
+      - ./.env.prod
+    depends_on:
+      - db
+  db:
+    image: postgres:13.0-alpine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    env_file:
+      - ./.env.prod.db
+
+  nginx:
+    build: ./nginx
+    volumes:
+      - static_volume:/home/app/web/staticfiles
+      - ./nginx/andreea.crt:/etc/nginx/andreea.crt # New Line!
+      - ./nginx/andreea.key:/etc/nginx/andreea.key # New Line!
+    ports:
+      - 1337:80
+      - "443:443"
+    depends_on:
+      - web
+
+volumes:
+  postgres_data:
+  static_volume:
